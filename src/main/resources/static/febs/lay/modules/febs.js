@@ -16,6 +16,7 @@ layui.extend({
     var windowWidth = $(window).width();
 
     conf.viewTabs = currentUser.isTab === '1';
+    self.defaultView = layui.router('#' + conf.entry);
     self.route = layui.router();
     self.view = view;
     self.api = layui.api;
@@ -41,14 +42,28 @@ layui.extend({
         layui.each(layui.conf.style, function (index, url) {
             layui.link(url + '?v=' + conf.v)
         });
+        if (!self.route.href || self.route.href === '/') {
+            self.route = self.defaultView
+        }
+        if (conf.viewTabs) {
+            if (self.route.href !== self.defaultView.href) {
+                self.initView(self.defaultView, {unshift: true, focus: false})
+            }
+        }
         self.initView(self.route)
+        String.prototype.startsWith = function (str) {
+            if (str == null || str === "" || this.length === 0 || str.length > this.length) {
+                return false;
+            }
+            return this.substr(0, str.length) === str;
+        };
     };
     self.post = function (params) {
         view.request($.extend({type: 'post'}, params))
     };
 
     //初始化视图区域
-    self.initView = function (route) {
+    self.initView = function (route, options) {
         if (!self.route.href || self.route.href === '/') {
             self.route = layui.router('#' + conf.entry);
             route = self.route
@@ -58,7 +73,7 @@ layui.extend({
         if ($.inArray(route.fileurl, conf.indPage) === -1) {
             var loadRenderPage = function (params) {
                 if (conf.viewTabs === true) {
-                    view.renderTabs(route)
+                    view.renderTabs(route, null, options)
                 } else {
                     view.render(route.fileurl)
                 }
@@ -227,20 +242,14 @@ layui.extend({
         self.initView(self.route)
     });
 
-    //回车提交 form 表单
-    $(document).on('keydown', function (e) {
-        var ev = document.all ? window.event : e;
-        if (ev.keyCode === 13) {
-            var form = $(':focus').parents('.layui-form');
-            form.find('[lay-submit]').click()
-        }
-    });
-
     $(document).on('click', '[lay-href]', function (e) {
         var href = $(this).attr('lay-href');
         var target = $(this).attr('target');
 
         if (href === '') return;
+        if (href.startsWith('http')) {
+            window.open(href)
+        }
         if (self.isUrl(href)) {
             next()
         }
@@ -526,7 +535,7 @@ layui.extend({
         var defaultSetting = {
             cellMinWidth: 80,
             page: true,
-            skin: 'line',
+            skin: 'line row',
             limit: 10,
             limits: [5, 10, 20, 30, 40, 100],
             autoSort: false,
@@ -535,10 +544,20 @@ layui.extend({
                 limitName: 'pageSize'
             },
             parseData: function (res) {
+                if (res.code !== 200) {
+                    console.error(res)
+                }
                 return {
                     "code": res.code === 200 ? 0 : res.code,
                     "count": res.data.total,
                     "data": res.data.rows
+                }
+            },
+            done: function(res, curr, count){
+                var noneDiv = $(".layui-table-body").find(".layui-none").first();
+                if (noneDiv.length === 1) {
+                    var table = $(".layui-table").first();
+                    noneDiv.width(table.width())
                 }
             }
         };

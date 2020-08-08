@@ -3,27 +3,23 @@ package cc.mrbird.febs.common.aspect;
 import cc.mrbird.febs.common.annotation.Limit;
 import cc.mrbird.febs.common.entity.LimitType;
 import cc.mrbird.febs.common.exception.LimitAccessException;
-import cc.mrbird.febs.common.utils.IPUtil;
+import cc.mrbird.febs.common.utils.HttpContextUtil;
+import cc.mrbird.febs.common.utils.IpUtil;
 import com.google.common.collect.ImmutableList;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.Serializable;
 import java.lang.reflect.Method;
-import java.util.Objects;
 
 
 /**
@@ -34,31 +30,24 @@ import java.util.Objects;
 @Slf4j
 @Aspect
 @Component
-public class LimitAspect {
+@RequiredArgsConstructor
+public class LimitAspect extends BaseAspectSupport {
 
-    private final RedisTemplate<String, Serializable> limitRedisTemplate;
-
-    @Autowired
-    public LimitAspect(RedisTemplate<String, Serializable> limitRedisTemplate) {
-        this.limitRedisTemplate = limitRedisTemplate;
-    }
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Pointcut("@annotation(cc.mrbird.febs.common.annotation.Limit)")
     public void pointcut() {
-        // do nothing
     }
 
     @Around("pointcut()")
     public Object around(ProceedingJoinPoint point) throws Throwable {
-        HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
-
-        MethodSignature signature = (MethodSignature) point.getSignature();
-        Method method = signature.getMethod();
+        HttpServletRequest request = HttpContextUtil.getHttpServletRequest();
+        Method method = resolveMethod(point);
         Limit limitAnnotation = method.getAnnotation(Limit.class);
         LimitType limitType = limitAnnotation.limitType();
         String name = limitAnnotation.name();
         String key;
-        String ip = IPUtil.getIpAddr(request);
+        String ip = IpUtil.getIpAddr(request);
         int limitPeriod = limitAnnotation.period();
         int limitCount = limitAnnotation.count();
         switch (limitType) {
@@ -74,7 +63,7 @@ public class LimitAspect {
         ImmutableList<String> keys = ImmutableList.of(StringUtils.join(limitAnnotation.prefix() + "_", key, ip));
         String luaScript = buildLuaScript();
         RedisScript<Number> redisScript = new DefaultRedisScript<>(luaScript, Number.class);
-        Number count = limitRedisTemplate.execute(redisScript, keys, limitCount, limitPeriod);
+        Number count = redisTemplate.execute(redisScript, keys, limitCount, limitPeriod);
         log.info("IP:{} 第 {} 次访问key为 {}，描述为 [{}] 的接口", ip, count, keys, name);
         if (count != null && count.intValue() <= limitCount) {
             return point.proceed();

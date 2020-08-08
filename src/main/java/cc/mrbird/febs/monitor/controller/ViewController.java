@@ -1,16 +1,13 @@
 package cc.mrbird.febs.monitor.controller;
 
 import cc.mrbird.febs.common.entity.FebsConstant;
-import cc.mrbird.febs.common.exception.RedisConnectException;
 import cc.mrbird.febs.common.utils.FebsUtil;
 import cc.mrbird.febs.monitor.entity.JvmInfo;
-import cc.mrbird.febs.monitor.entity.RedisInfo;
 import cc.mrbird.febs.monitor.entity.ServerInfo;
 import cc.mrbird.febs.monitor.entity.TomcatInfo;
 import cc.mrbird.febs.monitor.helper.FebsActuatorHelper;
-import cc.mrbird.febs.monitor.service.IRedisService;
+import lombok.RequiredArgsConstructor;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,12 +22,10 @@ import static cc.mrbird.febs.monitor.endpoint.FebsMetricsEndpoint.FebsMetricResp
  */
 @Controller("monitorView")
 @RequestMapping(FebsConstant.VIEW_PREFIX + "monitor")
+@RequiredArgsConstructor
 public class ViewController {
 
-    @Autowired
-    private FebsActuatorHelper actuatorHelper;
-    @Autowired
-    private IRedisService redisService;
+    private final FebsActuatorHelper actuatorHelper;
 
     @GetMapping("online")
     @RequiresPermissions("online:view")
@@ -48,22 +43,6 @@ public class ViewController {
     @RequiresPermissions("loginlog:view")
     public String loginLog() {
         return FebsUtil.view("monitor/loginLog");
-    }
-
-    @GetMapping("redis/info")
-    @RequiresPermissions("redis:view")
-    public String getRedisInfo(Model model) throws RedisConnectException {
-        List<RedisInfo> infoList = this.redisService.getRedisInfo();
-        model.addAttribute("infoList", infoList);
-        return FebsUtil.view("monitor/redisInfo");
-    }
-
-    @GetMapping("redis/terminal")
-    @RequiresPermissions("redis:terminal:view")
-    public String redisTerminal(Model model) {
-        String osName = System.getProperty("os.name");
-        model.addAttribute("osName", osName);
-        return FebsUtil.view("monitor/redisTerminal");
     }
 
     @GetMapping("httptrace")
@@ -102,4 +81,8 @@ public class ViewController {
         return FebsUtil.view("monitor/serverInfo");
     }
 
+    @GetMapping("swagger")
+    public String swagger() {
+        return FebsUtil.view("monitor/swagger");
+    }
 }

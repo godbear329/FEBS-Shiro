@@ -1,7 +1,9 @@
 package cc.mrbird.febs.system.entity;
 
+import cc.mrbird.febs.common.annotation.Desensitization;
 import cc.mrbird.febs.common.annotation.IsMobile;
 import cc.mrbird.febs.common.converter.TimeConverter;
+import cc.mrbird.febs.common.entity.DesensitizationType;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -27,27 +29,49 @@ public class User implements Serializable {
 
     private static final long serialVersionUID = -4352868070794165001L;
 
-    // 用户状态：有效
+    /**
+     * 用户状态：有效
+     */
     public static final String STATUS_VALID = "1";
-    // 用户状态：锁定
+    /**
+     * 用户状态：锁定
+     */
     public static final String STATUS_LOCK = "0";
-    // 默认头像
+    /**
+     * 默认头像
+     */
     public static final String DEFAULT_AVATAR = "default.jpg";
-    // 默认密码
+    /**
+     * 默认密码
+     */
     public static final String DEFAULT_PASSWORD = "1234qwer";
-    // 性别男
+    /**
+     * 性别男
+     */
     public static final String SEX_MALE = "0";
-    // 性别女
+    /**
+     * 性别女
+     */
     public static final String SEX_FEMALE = "1";
-    // 性别保密
+    /**
+     * 性别保密
+     */
     public static final String SEX_UNKNOW = "2";
-    // 黑色主题
+    /**
+     * 黑色主题
+     */
     public static final String THEME_BLACK = "black";
-    // 白色主题
+    /**
+     * 白色主题
+     */
     public static final String THEME_WHITE = "white";
-    // TAB开启
+    /**
+     * TAB开启
+     */
     public static final String TAB_OPEN = "1";
-    // TAB关闭
+    /**
+     * TAB关闭
+     */
     public static final String TAB_CLOSE = "0";
 
 
@@ -92,6 +116,7 @@ public class User implements Serializable {
     @TableField("MOBILE")
     @IsMobile(message = "{mobile}")
     @ExcelField(value = "联系电话")
+    @Desensitization(type = DesensitizationType.PHONE)
     private String mobile;
 
     /**
@@ -179,6 +204,9 @@ public class User implements Serializable {
     @ExcelField(value = "角色")
     @TableField(exist = false)
     private String roleName;
+
+    @TableField(exist = false)
+    private String deptIds;
 
     public Long getId() {
         return userId;

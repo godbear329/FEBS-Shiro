@@ -6,11 +6,12 @@ import cc.mrbird.febs.common.entity.FebsConstant;
 import cc.mrbird.febs.common.utils.DateUtil;
 import cc.mrbird.febs.common.utils.FebsUtil;
 import cc.mrbird.febs.system.entity.User;
+import cc.mrbird.febs.system.service.IUserDataPermissionService;
 import cc.mrbird.febs.system.service.IUserService;
+import lombok.RequiredArgsConstructor;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.session.ExpiredSessionException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,12 +26,12 @@ import javax.servlet.http.HttpServletRequest;
  * @author MrBird
  */
 @Controller("systemView")
+@RequiredArgsConstructor
 public class ViewController extends BaseController {
 
-    @Autowired
-    private IUserService userService;
-    @Autowired
-    private ShiroHelper shiroHelper;
+    private final IUserService userService;
+    private final ShiroHelper shiroHelper;
+    private final IUserDataPermissionService userDataPermissionService;
 
     @GetMapping("login")
     @ResponseBody
@@ -50,7 +51,6 @@ public class ViewController extends BaseController {
     }
 
 
-
     @GetMapping("/")
     public String redirectIndex() {
         return "redirect:/index";
@@ -58,12 +58,13 @@ public class ViewController extends BaseController {
 
     @GetMapping("index")
     public String index(Model model) {
-        AuthorizationInfo authorizationInfo = shiroHelper.getCurrentuserAuthorizationInfo();
+        AuthorizationInfo authorizationInfo = shiroHelper.getCurrentUserAuthorizationInfo();
         User user = super.getCurrentUser();
-        user.setPassword("It's a secret");
-        model.addAttribute("user", userService.findByName(user.getUsername())); // 获取实时的用户信息
+        User currentUserDetail = userService.findByName(user.getUsername());
+        currentUserDetail.setPassword("It's a secret");
+        model.addAttribute("user", currentUserDetail);
         model.addAttribute("permissions", authorizationInfo.getStringPermissions());
-        model.addAttribute("roles",authorizationInfo.getRoles());
+        model.addAttribute("roles", authorizationInfo.getRoles());
         return "index";
     }
 
@@ -158,14 +159,21 @@ public class ViewController extends BaseController {
 
     private void resolveUserModel(String username, Model model, Boolean transform) {
         User user = userService.findByName(username);
+        String deptIds = userDataPermissionService.findByUserId(String.valueOf(user.getUserId()));
+        user.setDeptIds(deptIds);
         model.addAttribute("user", user);
         if (transform) {
-            String ssex = user.getSex();
-            if (User.SEX_MALE.equals(ssex)) user.setSex("男");
-            else if (User.SEX_FEMALE.equals(ssex)) user.setSex("女");
-            else user.setSex("保密");
+            String sex = user.getSex();
+            if (User.SEX_MALE.equals(sex)) {
+                user.setSex("男");
+            } else if (User.SEX_FEMALE.equals(sex)) {
+                user.setSex("女");
+            } else {
+                user.setSex("保密");
+            }
         }
-        if (user.getLastLoginTime() != null)
+        if (user.getLastLoginTime() != null) {
             model.addAttribute("lastLoginTime", DateUtil.getDateFormat(user.getLastLoginTime(), DateUtil.FULL_TIME_SPLIT_PATTERN));
+        }
     }
 }

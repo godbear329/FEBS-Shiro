@@ -1,3 +1,8 @@
+<style>
+    #febs-job-log .layui-form-label{
+        width: 65px;
+    }
+</style>
 <div class="layui-fluid layui-anim febs-anim" id="febs-job-log" lay-title="调度日志">
     <div class="layui-row febs-container">
         <div class="layui-col-md12">
@@ -8,19 +13,19 @@
                             <div class="layui-col-md10">
                                 <div class="layui-form-item">
                                     <div class="layui-inline">
-                                        <label class="layui-form-label layui-form-label-sm">Bean名称</label>
+                                        <label class="layui-form-label">Bean名称</label>
                                         <div class="layui-input-inline">
                                             <input type="text" name="beanName" autocomplete="off" class="layui-input">
                                         </div>
                                     </div>
                                     <div class="layui-inline">
-                                        <label class="layui-form-label layui-form-label-sm">方法名称</label>
+                                        <label class="layui-form-label">方法名称</label>
                                         <div class="layui-input-inline">
-                                            <input type="text" name="methodName" id="createTime" class="layui-input">
+                                            <input type="text" name="methodName" class="layui-input">
                                         </div>
                                     </div>
                                     <div class="layui-inline">
-                                        <label class="layui-form-label layui-form-label-sm">状态</label>
+                                        <label class="layui-form-label">状态</label>
                                         <div class="layui-input-inline">
                                             <select name="status">
                                                 <option value=""></option>
@@ -32,10 +37,10 @@
                                 </div>
                             </div>
                             <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
-                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-blue-plain  table-action" id="query">
                                     <i class="layui-icon">&#xe848;</i>
                                 </div>
-                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary febs-button-green-plain  table-action" id="reset">
                                     <i class="layui-icon">&#xe79b;</i>
                                 </div>
                                 <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
@@ -71,7 +76,7 @@
     1: {title: '失败', color: 'volcano'}
     }[d.status];
     }}
-    <span class="layui-badge febs-tag-{{status.color}}">{{ status.title }}</span>
+    <span class="layui-badge febs-bg-{{status.color}}">{{ status.title }}</span>
 </script>
 <script type="text/html" id="jobLog-option">
     <span shiro:lacksPermission="job:log:delete">
@@ -193,12 +198,9 @@
         }
 
         function getQueryParams() {
-            return {
-                status: $searchForm.find("select[name='status']").val(),
-                beanName: $searchForm.find("input[name='beanName']").val().trim(),
-                methodName: $searchForm.find("input[name='methodName']").val().trim(),
-                invalidate_ie_cache: new Date()
-            };
+            var params = $searchForm.serializeJson();
+            params.invalidate_ie_cache = new Date();
+            return params;
         }
     })
 </script>

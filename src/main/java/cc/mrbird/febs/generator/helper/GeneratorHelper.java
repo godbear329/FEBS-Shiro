@@ -4,9 +4,9 @@ import cc.mrbird.febs.common.annotation.Helper;
 import cc.mrbird.febs.common.utils.AddressUtil;
 import cc.mrbird.febs.common.utils.FebsUtil;
 import cc.mrbird.febs.generator.entity.Column;
+import cc.mrbird.febs.generator.entity.FieldType;
 import cc.mrbird.febs.generator.entity.GeneratorConfig;
 import cc.mrbird.febs.generator.entity.GeneratorConstant;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.io.Files;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -32,20 +32,17 @@ public class GeneratorHelper {
         String path = getFilePath(configure, configure.getEntityPackage(), suffix, false);
         String templateName = GeneratorConstant.ENTITY_TEMPLATE;
         File entityFile = new File(path);
-        JSONObject data = toJSONObject(configure);
-        data.put("hasDate", false);
-        data.put("hasBigDecimal", false);
         columns.forEach(c -> {
             c.setField(FebsUtil.underscoreToCamel(StringUtils.lowerCase(c.getName())));
-            if (StringUtils.containsAny(c.getType(), "date", "datetime", "timestamp")) {
-                data.put("hasDate", true);
+            if (StringUtils.containsAny(c.getType(), FieldType.DATE, FieldType.DATETIME, FieldType.TIMESTAMP)) {
+                configure.setHasDate(true);
             }
-            if (StringUtils.containsAny(c.getType(), "decimal", "numeric")) {
-                data.put("hasBigDecimal", true);
+            if (StringUtils.containsAny(c.getType(), FieldType.DECIMAL, FieldType.NUMERIC)) {
+                configure.setHasBigDecimal(true);
             }
         });
-        data.put("columns", columns);
-        this.generateFileByTemplate(templateName, entityFile, data);
+        configure.setColumns(columns);
+        this.generateFileByTemplate(templateName, entityFile, configure);
     }
 
     public void generateMapperFile(List<Column> columns, GeneratorConfig configure) throws Exception {
@@ -53,7 +50,7 @@ public class GeneratorHelper {
         String path = getFilePath(configure, configure.getMapperPackage(), suffix, false);
         String templateName = GeneratorConstant.MAPPER_TEMPLATE;
         File mapperFile = new File(path);
-        generateFileByTemplate(templateName, mapperFile, toJSONObject(configure));
+        generateFileByTemplate(templateName, mapperFile, configure);
     }
 
     public void generateServiceFile(List<Column> columns, GeneratorConfig configure) throws Exception {
@@ -61,7 +58,7 @@ public class GeneratorHelper {
         String path = getFilePath(configure, configure.getServicePackage(), suffix, true);
         String templateName = GeneratorConstant.SERVICE_TEMPLATE;
         File serviceFile = new File(path);
-        generateFileByTemplate(templateName, serviceFile, toJSONObject(configure));
+        generateFileByTemplate(templateName, serviceFile, configure);
     }
 
     public void generateServiceImplFile(List<Column> columns, GeneratorConfig configure) throws Exception {
@@ -69,7 +66,7 @@ public class GeneratorHelper {
         String path = getFilePath(configure, configure.getServiceImplPackage(), suffix, false);
         String templateName = GeneratorConstant.SERVICEIMPL_TEMPLATE;
         File serviceImplFile = new File(path);
-        generateFileByTemplate(templateName, serviceImplFile, toJSONObject(configure));
+        generateFileByTemplate(templateName, serviceImplFile, configure);
     }
 
     public void generateControllerFile(List<Column> columns, GeneratorConfig configure) throws Exception {
@@ -77,7 +74,7 @@ public class GeneratorHelper {
         String path = getFilePath(configure, configure.getControllerPackage(), suffix, false);
         String templateName = GeneratorConstant.CONTROLLER_TEMPLATE;
         File controllerFile = new File(path);
-        generateFileByTemplate(templateName, controllerFile, toJSONObject(configure));
+        generateFileByTemplate(templateName, controllerFile, configure);
     }
 
     public void generateMapperXmlFile(List<Column> columns, GeneratorConfig configure) throws Exception {
@@ -85,10 +82,9 @@ public class GeneratorHelper {
         String path = getFilePath(configure, configure.getMapperXmlPackage(), suffix, false);
         String templateName = GeneratorConstant.MAPPERXML_TEMPLATE;
         File mapperXmlFile = new File(path);
-        JSONObject data = toJSONObject(configure);
         columns.forEach(c -> c.setField(FebsUtil.underscoreToCamel(StringUtils.lowerCase(c.getName()))));
-        data.put("columns", columns);
-        generateFileByTemplate(templateName, mapperXmlFile, data);
+        configure.setColumns(columns);
+        generateFileByTemplate(templateName, mapperXmlFile, configure);
     }
 
     @SuppressWarnings("UnstableApiUsage")
@@ -116,21 +112,19 @@ public class GeneratorHelper {
     }
 
     private static String packageConvertPath(String packageName) {
-        return String.format("/%s/", packageName.contains(".") ? packageName.replaceAll("\\.", "/") : packageName);
-    }
-
-    private JSONObject toJSONObject(Object o) {
-        return JSONObject.parseObject(JSONObject.toJSON(o).toString());
+        return String.format("%s%s%s", File.separator,
+                packageName.contains(".") ? packageName.replaceAll("\\.", File.separator) : packageName, File.separator);
     }
 
     private Template getTemplate(String templateName) throws Exception {
+        final String templatePathPrefix = File.separator + "generator" + File.separator + "templates" + File.separator;
         Configuration configuration = new freemarker.template.Configuration(Configuration.VERSION_2_3_23);
-        String templatePath = GeneratorHelper.class.getResource("/generator/templates/").getPath();
+        String templatePath = GeneratorHelper.class.getResource(templatePathPrefix).getPath();
         File file = new File(templatePath);
         if (!file.exists()) {
             templatePath = System.getProperties().getProperty("java.io.tmpdir");
-            file = new File(templatePath + "/" + templateName);
-            FileUtils.copyInputStreamToFile(Objects.requireNonNull(AddressUtil.class.getClassLoader().getResourceAsStream("classpath:generator/templates/" + templateName)), file);
+            file = new File(templatePath + File.separator + templateName);
+            FileUtils.copyInputStreamToFile(Objects.requireNonNull(AddressUtil.class.getClassLoader().getResourceAsStream("classpath:generator" + File.separator + "templates" + File.separator + templateName)), file);
         }
         configuration.setDirectoryForTemplateLoading(new File(templatePath));
         configuration.setDefaultEncoding("UTF-8");

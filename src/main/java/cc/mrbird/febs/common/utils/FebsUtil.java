@@ -21,6 +21,8 @@ import java.util.stream.IntStream;
 @Slf4j
 public class FebsUtil {
 
+    private static final Pattern CHINESE_PATTERN = Pattern.compile("[\u4e00-\u9fa5]");
+
     /**
      * 驼峰转下划线
      *
@@ -28,17 +30,20 @@ public class FebsUtil {
      * @return 结果
      */
     public static String camelToUnderscore(String value) {
-        if (StringUtils.isBlank(value))
+        if (StringUtils.isBlank(value)) {
             return value;
+        }
         String[] arr = StringUtils.splitByCharacterTypeCamelCase(value);
-        if (arr.length == 0)
+        if (arr.length == 0) {
             return value;
+        }
         StringBuilder result = new StringBuilder();
         IntStream.range(0, arr.length).forEach(i -> {
-            if (i != arr.length - 1)
+            if (i != arr.length - 1) {
                 result.append(arr[i]).append(StringPool.UNDERSCORE);
-            else
+            } else {
                 result.append(arr[i]);
+            }
         });
         return StringUtils.lowerCase(result.toString());
     }
@@ -91,7 +96,22 @@ public class FebsUtil {
         return (User) SecurityUtils.getSubject().getPrincipal();
     }
 
+    /**
+     * 判断是否包含中文
+     *
+     * @param value 内容
+     * @return 结果
+     */
+    public static boolean containChinese(String value) {
+        if (StringUtils.isBlank(value)) {
+            return false;
+        }
+        Matcher matcher = CHINESE_PATTERN.matcher(value);
+        return matcher.find();
+    }
+
     public static String view(String viewName) {
         return FebsConstant.VIEW_PREFIX + viewName;
     }
+
 }

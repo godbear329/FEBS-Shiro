@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class BaseController {
 
-    protected static Subject getSubject() {
+    private Subject getSubject() {
         return SecurityUtils.getSubject();
     }
 
@@ -36,7 +36,11 @@ public class BaseController {
     }
 
     protected Map<String, Object> getDataTable(IPage<?> pageInfo) {
-        Map<String, Object> data = new HashMap<>();
+        return getDataTable(pageInfo, 2);
+    }
+
+    protected Map<String, Object> getDataTable(IPage<?> pageInfo, int dataMapInitialCapacity) {
+        Map<String, Object> data = new HashMap<>(dataMapInitialCapacity);
         data.put("rows", pageInfo.getRecords());
         data.put("total", pageInfo.getTotal());
         return data;

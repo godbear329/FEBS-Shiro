@@ -1,9 +1,11 @@
 package cc.mrbird.febs.system.service;
 
+import cc.mrbird.febs.common.entity.FebsConstant;
 import cc.mrbird.febs.common.entity.QueryRequest;
 import cc.mrbird.febs.system.entity.User;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.scheduling.annotation.Async;
 
 /**
  * @author MrBird
@@ -25,7 +27,7 @@ public interface IUserService extends IService<User> {
      * @param user    用户对象，用于传递查询条件
      * @return IPage
      */
-    IPage<User> findUserDetail(User user, QueryRequest request);
+    IPage<User> findUserDetailList(User user, QueryRequest request);
 
     /**
      * 通过用户名查找用户详细信息
@@ -33,13 +35,14 @@ public interface IUserService extends IService<User> {
      * @param username 用户名
      * @return 用户信息
      */
-    User findUserDetail(String username);
+    User findUserDetailList(String username);
 
     /**
      * 更新用户登录时间
      *
      * @param username 用户名
      */
+    @Async(FebsConstant.ASYNC_POOL)
     void updateLoginTime(String username);
 
     /**
